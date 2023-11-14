@@ -79,9 +79,7 @@ public:
         last = nullptr;
     }
     delete temp;
-    if (!empty()) {
-      list_size--;
-    }
+    list_size--;
   }
 
   //REQUIRES: list is not empty
@@ -97,9 +95,7 @@ public:
         first = nullptr;
     }
     delete temp;
-    if (!empty()) {
-      list_size--;
-    }
+    list_size--;
   }
 
   //MODIFIES: may invalidate list iterators
@@ -130,6 +126,9 @@ public:
 
   //overloaded assignment operator
   List<T>& operator=(const List<T> &other) {
+    if (this == &other) {
+        return *this;
+    }
     if (this != &other) {
         clear();
         copy_all(other);
@@ -235,20 +234,20 @@ public:
   void erase(Iterator i) {
     assert(i.node_ptr != nullptr); // Ensure the iterator is valid
 
-  Node *target = i.node_ptr;
-  if (target->prev) {
-    target->prev->next = target->next;
-  } else {
-    first = target->next; // If erasing the first element
-  }
+    Node *target = i.node_ptr;
+    if (target->prev) {
+      target->prev->next = target->next;
+    } else {
+      first = target->next; // If erasing the first element
+    }
 
-  if (target->next) {
-    target->next->prev = target->prev;
-  } else {
-    last = target->prev; // If erasing the last element
-  }
-
-  delete target;
+    if (target->next) {
+      target->next->prev = target->prev;
+    } else {
+      last = target->prev; // If erasing the last element
+    }
+    delete target;
+    list_size--;
   }
 
   //REQUIRES: i is a valid iterator associated with this list
@@ -256,24 +255,34 @@ public:
   void insert(Iterator i, const T &datum) {
     Node *new_node = new Node{nullptr, nullptr, datum};
 
-    // If inserting at the beginning of the list or into an empty list
-    if (i.node_ptr == first || i.node_ptr == nullptr) {
+    // Inserting into an empty list
+    if (empty()) {
+        first = last = new_node;
+    }
+    // Inserting at the beginning of the list
+    else if (i.node_ptr == first) {
         new_node->next = first;
-        if (first != nullptr) {
-            // List is not empty
-            first->prev = new_node;
-        } else {
-            // Inserting into an empty list
-            last = new_node;
-        }
+        first->prev = new_node;
         first = new_node;
-    } else {
-        // Inserting in the middle or end of the list
+    }
+    // Inserting at the end of the list
+    else if (i.node_ptr == nullptr) {
+        last->next = new_node;
+        new_node->prev = last;
+        last = new_node;
+    }
+    // Inserting in the middle of the list
+    else {
         new_node->next = i.node_ptr;
         new_node->prev = i.node_ptr->prev;
-        i.node_ptr->prev->next = new_node;
+
+        if (i.node_ptr->prev != nullptr) {
+            i.node_ptr->prev->next = new_node;
+        }
+
         i.node_ptr->prev = new_node;
     }
+    list_size++;
   }
 
 };//List
